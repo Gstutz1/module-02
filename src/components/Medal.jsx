@@ -1,9 +1,17 @@
-import {Typography} from '@material-ui/core'
+import React, { Component } from 'react';
 
-const Medal = ({medalType, medalCount}) => {
-        return (
-            <Typography variant='body1'>{medalType}s: {medalCount}</Typography>
-        )
+class Medal extends Component {
+  state = {  }
+  render() { 
+    const { medal, country, onIncrement, onDecrement } = this.props;
+    return (
+      <div className="medals">
+        { medal.name } Medals: { country[medal.name] }
+        <button onClick={ () => onIncrement(country.id, medal.name) }>+</button>
+        <button disabled={ country[medal.name] === 0 } onClick={ () => onDecrement(country.id, medal.name) }>-</button>
+      </div>
+    );
+  }
 }
 
 export default Medal;

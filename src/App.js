@@ -1,43 +1,71 @@
-import React, {Component} from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Country from './components/Country';
-import {decrementMedal, getCountries, getTotalMedalCount, incrementMedal} from './services/CountryService';
-import { Card, CardContent, Typography } from '@material-ui/core';
+import NewCountry from './components/NewCountry';
 import './App.css';
 
-class App extends Component {
-  state = {
-    countries: getCountries()
-  }
+const App = () => {
+  const [ countries, setCountries ] = useState([]);
+  const medals = useRef([
+    { id: 1, name: 'gold' },
+    { id: 2, name: 'silver' },
+    { id: 3, name: 'bronze' },
+  ]);
 
-  handleIncrement = (countryId, medalType) => {
-    incrementMedal(countryId, medalType);
-    this.setState({countries: getCountries()});
-  }
+  useEffect(() => {
+    let fetchedCountries = [
+      { id: 1, name: 'United States', gold: 2, silver: 2, bronze: 3 },
+      { id: 2, name: 'China', gold: 3, silver: 1, bronze: 0 },
+      { id: 3, name: 'Germany', gold: 0, silver: 2, bronze: 2 },
+    ]
+    setCountries(fetchedCountries);
+  }, []);
 
-  handleDecrement = (countryId, medalType) => {
-    decrementMedal(countryId, medalType);
-    this.setState({countries: getCountries()});
+  const handleAdd = (name) => {
+    const id = countries.length === 0 ? 1 : Math.max(...countries.map(country => country.id)) + 1;
+    setCountries([...countries].concat({ id: id, name: name, gold: 0, silver: 0, bronze: 0 }));
   }
-
-  render() {
-    const {countries} = this.state;
-    return (
-      <div>
-        {countries.map(country => <Country handleIncrement={this.handleIncrement} handleDecrement={this.handleDecrement} 
-        key={country.id} country={country}/>)}
-        <div style={{display:'flex', justifyContent:'center'}}>
-          <Card className='Country'>
-            <CardContent>
-              <Typography variant='h6' className='CountryName'>Total Medals Awarded</Typography>
-              <Typography variant='body1'>Total Gold Awarded - {getTotalMedalCount('gold')}</Typography>
-              <Typography variant='body1'>Total Silver Awarded - {getTotalMedalCount('silver')}</Typography>
-              <Typography variant='body1'>Total Bronze Awarded - {getTotalMedalCount('bronze')}</Typography>
-            </CardContent>
-          </Card>
-        </div>
+  const handleDelete = (countryId) => {
+    setCountries([...countries].filter(c => c.id !== countryId));
+  }
+  const handleIncrement = (countryId, medalName) => {
+    const idx = countries.findIndex(c => c.id === countryId);
+    const mutableCountries = [...countries ];
+    mutableCountries[idx][medalName] += 1;
+    setCountries(mutableCountries);
+  }
+  const handleDecrement = (countryId, medalName) => {
+    const idx = countries.findIndex(c => c.id === countryId);
+    const mutableCountries = [...countries ];
+    mutableCountries[idx][medalName] -= 1;
+    setCountries(mutableCountries);
+  }
+  const getAllMedalsTotal = () => {
+    let sum = 0;
+    medals.current.forEach(medal => { sum += countries.reduce((a, b) => a + b[medal.name], 0); });
+    return sum;
+  }
+  return (
+    <React.Fragment>
+      <div className='appHeading'>
+        Olympic Medals
+        <span className='badge'>
+          { getAllMedalsTotal() }
+        </span>
       </div>
-    )
-  }
+      <div className='countries'>
+          { countries.map(country => 
+            <Country 
+              key={ country.id } 
+              country={ country } 
+              medals={ medals.current }
+              onDelete={ handleDelete }
+              onIncrement={ handleIncrement } 
+              onDecrement={ handleDecrement } />
+          )}
+      </div>
+      <NewCountry onAdd={ handleAdd } />
+    </React.Fragment>
+  );
 }
-
+ 
 export default App;
