@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios'
 import Country from './components/Country';
 import NewCountry from './components/NewCountry';
 import './App.css';
 
 const App = () => {
+  const apiEndpoint = 'https://medal-api.azurewebsites.net/Api/country'
   const [ countries, setCountries ] = useState([]);
   const medals = useRef([
     { id: 1, name: 'gold' },
@@ -12,33 +14,47 @@ const App = () => {
   ]);
 
   useEffect(() => {
-    let fetchedCountries = [
-      { id: 1, name: 'United States', gold: 2, silver: 2, bronze: 3 },
-      { id: 2, name: 'China', gold: 3, silver: 1, bronze: 0 },
-      { id: 3, name: 'Germany', gold: 0, silver: 2, bronze: 2 },
-    ]
-    setCountries(fetchedCountries);
+    async function fetchCountries() {
+      const {data : fetchedCountries} = await axios.get(apiEndpoint);
+      setCountries(fetchedCountries);
+    }
+    fetchCountries();
   }, []);
 
-  const handleAdd = (name) => {
-    const id = countries.length === 0 ? 1 : Math.max(...countries.map(country => country.id)) + 1;
-    setCountries([...countries].concat({ id: id, name: name, gold: 0, silver: 0, bronze: 0 }));
+  const handleAdd = async (name) => {
+    const { data: post } = await axios.post(apiEndpoint, { name: name });
+    setCountries(countries.concat(post));
   }
-  const handleDelete = (countryId) => {
-    setCountries([...countries].filter(c => c.id !== countryId));
+
+  const handleDelete = async (countryId) => {
+    const originalCountries = countries;
+    setCountries(countries.filter(c => c.id !== countryId));
+    try {
+      await axios.delete(`${apiEndpoint}/${countryId}`);
+    } catch (ex) {
+      if (ex.response && ex.response.status === 404) {
+        console.log("The record does not exist - it may have already been deleted");
+      } else { 
+        alert('An error occurred while deleting');
+        setCountries(originalCountries);
+      }
+    }
   }
+
   const handleIncrement = (countryId, medalName) => {
     const idx = countries.findIndex(c => c.id === countryId);
     const mutableCountries = [...countries ];
     mutableCountries[idx][medalName] += 1;
     setCountries(mutableCountries);
   }
+
   const handleDecrement = (countryId, medalName) => {
     const idx = countries.findIndex(c => c.id === countryId);
     const mutableCountries = [...countries ];
     mutableCountries[idx][medalName] -= 1;
     setCountries(mutableCountries);
   }
+  
   const getAllMedalsTotal = () => {
     let sum = 0;
     medals.current.forEach(medal => { sum += countries.reduce((a, b) => a + b[medal.name], 0); });

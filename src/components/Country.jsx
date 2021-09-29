@@ -1,18 +1,34 @@
 import React from 'react';
+import Medal from './Medal';
 
-const NewCountry = (props) => {
-  const {onAdd} = props;
-  const handleClick = () => {
-    const name = prompt('Enter country name');
-    if (name && name.trim().length > 0) {
-      onAdd(name);
-    }
+const Country = (props) => {
+  const { country, medals, onIncrement, onDecrement, onDelete } = props;
+
+  const getMedalsTotal = (country, medals) => {
+    let sum = 0;
+    medals.forEach(medal => { sum += country[medal.name]; });
+    return sum;
   }
   return (
-    <div className='newCountryButton'>
-      <button onClick={handleClick}>New Country</button>
+    <div className="country">
+      <div className="name">
+        { country.name }
+        <span className="badge">
+          { getMedalsTotal(country, medals) }
+        </span>
+      </div>
+      { medals.map(medal =>
+        <Medal 
+          key={ medal.id } 
+          country={ country } 
+          medal={ medal } 
+          onIncrement={ onIncrement } 
+          onDecrement={ onDecrement } />
+      ) }
+      <button onClick={() => onDelete(country.id)}>delete</button>
+      <hr />
     </div>
   );
 }
 
-export default NewCountry;
+export default Country;
